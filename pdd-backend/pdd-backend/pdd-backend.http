@@ -1,0 +1,6 @@
+@pdd_backend_HostAddress = http://localhost:5140
+
+GET {{pdd_backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
