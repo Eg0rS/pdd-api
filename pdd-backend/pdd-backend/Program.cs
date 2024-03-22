@@ -1,44 +1,60 @@
+using System.Reflection;
+using FluentMigrator.Runner;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using EducationService.Repositories;
+using EducationService.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+var connectionString = builder.Configuration.GetConnectionString("DatabaseConnection");
+
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var app = builder.Build();
+//существуют со старта приложения Singleton
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+builder.Services.AddSingleton<IConfigurationSettings, ConfigurationSettings>();
+builder.Services.AddSingleton<IConnection, Connection>();
+
+//создаются каждый http запрос Scoped
+builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<AuthorizationService>();
+
+
+//создаются раз когда вызываются Transident
+
+
+builder.Services.AddFluentMigratorCore()
+    .ConfigureRunner(rb => rb.AddPostgres().WithGlobalConnectionString(connectionString).ScanIn(Assembly.GetExecutingAssembly()).For.Migrations())
+    .AddLogging(rb => rb.AddFluentMigratorConsole());
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    options.RequireHttpsMetadata = false;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidIssuer = AuthOptions.Issuer,
+        ValidAudience = AuthOptions.Audience,
+        ValidateLifetime = true,
+        IssuerSigningKey = AuthOptions.GetSymmetricSecurityKey(),
+        ValidateIssuerSigningKey = true
+    };
+});
+
+var app = builder.Build();
+var serviceProvider = app.Services.CreateScope().ServiceProvider;
+
+var runner = serviceProvider.GetRequiredService<IMigrationRunner>();
+runner.MigrateUp();
 
 app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast")
-    .WithOpenApi();
+app.MapControllers();
+app.UseSwagger();
+app.UseSwaggerUI();
+app.UseRouting();
+app.UseAuthentication();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
