@@ -16,7 +16,7 @@ services:
         
   api:
     build:
-      context: .
+      context: pdd-api/
       dockerfile: Dockerfile
     networks:
       - backend
