@@ -12,6 +12,10 @@
         <PackageReference Include="FluentMigrator" Version="5.1.0" />
         <PackageReference Include="FluentMigrator.Runner" Version="5.1.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.2"/>
+        <PackageReference Include="Minio" Version="6.0.2" />
+        <PackageReference Include="Minio.AspNetCore" Version="6.0.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Npgsql" Version="8.0.2" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
     </ItemGroup>
 
@@ -23,7 +27,15 @@
 
 
     <ItemGroup>
-      <Folder Include="Dto\" />
+      <Folder Include="uploads\" />
     </ItemGroup>
+
+
+
+    <ItemGroup>
+      <ProjectReference Include="..\Database\Database.csproj" />
+      <ProjectReference Include="..\Kafka\Kafka.csproj" />
+    </ItemGroup>
+
 
 </Project>

@@ -14,4 +14,11 @@ public class ConfigurationSettings : IConfigurationSettings
     }
 
     public string DbConnection => configuration.GetSection("ConnectionStrings").GetSection("DatabaseConnection").Value;
+
+    public KafkaSettings KafkaSettings => new KafkaSettings
+    {
+        KafkaConnection = configuration.GetSection("Kafka").GetSection("Connection").Value,
+        KafkaTopicProducer = configuration.GetSection("Kafka").GetSection("TopicProducer").Value,
+        KafkaTopicConsumer = configuration.GetSection("Kafka").GetSection("TopicConsumer").Value
+    };
 }
