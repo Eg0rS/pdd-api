@@ -4,8 +4,7 @@ class MinioConfig(object):
         self.access_key = dict.get('access_key')
         self.secret_key = dict.get('secret_key')
         self.endpoint = dict.get('endpoint')
-        self.bucket_requests = dict.get('bucket_requests')
-        self.bucket_resolutions = dict.get('bucket_resolutions')
+        self.bucket = dict.get('bucket')
 
     def get_access_key(self):
         return self.access_key
@@ -16,8 +15,6 @@ class MinioConfig(object):
     def get_endpoint(self):
         return self.endpoint
 
-    def get_bucket_requests(self):
-        return self.bucket_requests
+    def get_bucket(self):
+        return self.bucket
 
-    def get_bucket_resolution(self):
-        return self.bucket_resolutions

@@ -37,9 +37,10 @@ public class FileController : BaseController
         {
             using (var minio = minioClientFactory.CreateClient())
             {
+                var guid = Guid.NewGuid().ToString();
                 var putObjectArgs = new PutObjectArgs()
-                    .WithBucket("requests")
-                    .WithObject(file.FileName)
+                    .WithBucket("files")
+                    .WithObject(guid)
                     .WithObjectSize(file.Length)
                     .WithStreamData(file.OpenReadStream());
                 var res = await minio.PutObjectAsync(putObjectArgs);
@@ -48,7 +49,7 @@ public class FileController : BaseController
                     return BadRequest("Failed to upload file to Minio");
                 }
 
-                return Ok(res.Etag);
+                return Ok(guid);
             }
         }
         catch (Exception e)
@@ -57,7 +58,33 @@ public class FileController : BaseController
         }
         finally
         {
-           
+        }
+    }
+
+    [HttpGet("{fileId}")]
+    public async Task<IActionResult> GetFile([FromRoute] string fileId)
+    {
+        if (string.IsNullOrEmpty(fileId))
+        {
+            return BadRequest("File name is empty");
+        }
+
+        try
+        {
+            using (var minio = minioClientFactory.CreateClient())
+            {
+                var getObjectArgs = new GetObjectArgs()
+                    .WithBucket("files")
+                    .WithObject(fileId)
+                    .WithCallbackStream((stream => stream.CopyToAsync(Response.Body)));
+                await minio.GetObjectAsync(getObjectArgs);
+
+                return new EmptyResult();
+            }
+        }
+        catch (Exception e)
+        {
+            return Problem(e.Message);
         }
     }
 }

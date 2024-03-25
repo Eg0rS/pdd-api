@@ -33,18 +33,41 @@ public class RequestsController : BaseController
 
         var queryObject = new QueryObject(
             "INSERT INTO requests (latitude, longitude, address, created_at, file_id, mac_address) VALUES (@latitude, @longitude, @address, @created_at, @file_id, @mac_addres) RETURNING id",
-        new
-        {
-            latitude = requestIn.Latitude,
-            longitude = requestIn.Longitude,
-            address = requestIn.Address,
-            created_at = DateTime.Now,
-            file_id = requestIn.FileId,
-            mac_addres = requestIn.MacAddress
-        });
+            new
+            {
+                latitude = requestIn.Latitude,
+                longitude = requestIn.Longitude,
+                address = requestIn.Address,
+                created_at = DateTime.Now,
+                file_id = requestIn.FileId,
+                mac_addres = requestIn.MacAddress
+            });
         var requestId = await connection.CommandWithResponse<int>(queryObject);
         await kafkaProducesService.WriteTraceLogAsync(new { id = requestId, fileId = requestIn.FileId });
         return Ok();
+    }
+
+    [HttpGet("{macAddress}")]
+    public async Task<IActionResult> GetRequests(string macAddress)
+    {
+        var queryObject = new QueryObject(
+            "SELECT id as Id, latitude as Latitude, longitude as Longitude, address as Address, created_at as CreatedAt, file_id as FileId , mac_address as MacAddress  FROM requests WHERE mac_address = @mac_address",
+            new { mac_address = macAddress });
+        var requests = await connection.ListOrEmpty<RequestOut>(queryObject);
+        if (requests.Count == 0)
+        {
+            return Ok(requests);
+        }
+        var queryObject2 = new QueryObject(
+            $"SELECT id as Id, request_id as RequestId, file_id as FileId, is_violation as IsViolation, violations as Violations, plate as Plate  FROM resolutions WHERE request_id in ({string.Join(", ", requests.Select(x => x.Id).ToList())})");
+
+        var resolutions = await connection.ListOrEmpty<Resolution>(queryObject2);
+        foreach (var request in requests)
+        {
+            request.Resolution = resolutions.FirstOrDefault(x => x.RequestId == request.Id);
+        }
+
+        return Ok(requests);
     }
 
 
