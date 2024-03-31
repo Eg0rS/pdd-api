@@ -8,6 +8,8 @@ services:
       POSTGRES_USER: 'postgres'
       POSTGRES_PASSWORD: 'root'
       POSTGRES_DB: 'production'
+    depends_on:
+      - doc
     networks:
       - backend
     ports:
@@ -24,9 +26,29 @@ services:
     ports:
         - "80:8080"
     depends_on:
+      - doc
       - database
       - minio
       - kowl
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    restart: always
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 512M
+
+  doc:
+    build:
+      context: doctest1/
+      dockerfile: Dockerfile
+    networks:
+      - backend
+    ports:
+        - "81:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
     restart: always
@@ -75,6 +97,7 @@ services:
       KAFKA_RESTART_DELAY: "5"
       ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL: "0"
     depends_on:
+      - doc
       - zookeeper
 
   kowl:
@@ -110,6 +133,7 @@ services:
     networks:
       - backend
     depends_on:
+      - doc
       - database
       - minio
       - kowl
