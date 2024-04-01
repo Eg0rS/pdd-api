@@ -45,6 +45,8 @@ services:
     build:
       context: doctest1/
       dockerfile: Dockerfile
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - backend
     ports:

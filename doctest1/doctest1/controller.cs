@@ -10,6 +10,7 @@ public class ApiController : ControllerBase
     {
     }
 
+    [HttpGet]
     public async Task<IActionResult> Get()
     {
         await test.test1();
